@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from fastapi import FastAPI, File, UploadFile, Form
 import os
 import cv2
@@ -6,6 +7,10 @@ from typing import List
 import shutil
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pose.DPoseEstimationUsingYOLOv7 import process_and_dump
+
+# process_and_dump()
+
 
 app = FastAPI()
 
@@ -120,3 +125,21 @@ def trim_video(input_path, output_path, start_frame):
 
     cap.release()
     out.release()
+
+# Directory to save videos
+UPLOAD_DIR = "backend_videos"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.post("/uploadTrimedVideos/")
+async def upload_trimed_video(file: UploadFile = File(...)):
+    try:
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return {"message": f"Video '{file.filename}' uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/processAndDump/")
+async def processAndDump():
+    process_and_dump()
