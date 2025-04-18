@@ -142,4 +142,5 @@ async def upload_trimed_video(file: UploadFile = File(...)):
     
 @app.post("/processAndDump/")
 async def processAndDump():
-    process_and_dump()
+    # process_and_dump()
+    print("hello")
