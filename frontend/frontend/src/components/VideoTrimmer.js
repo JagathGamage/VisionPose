@@ -1,42 +1,57 @@
-// import { useState, useRef, useEffect } from "react";
-// import { Typography, Button, Grid, Slider, Box, Paper } from "@mui/material";
-// import { FFmpeg,fetchFile  } from "@ffmpeg/ffmpeg";
-// import { fetchFile } from "@ffmpeg/util";
+import { useState, useRef, useEffect } from "react";
+import { Typography, Button, Grid, Slider, Box, Paper } from "@mui/material";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
+import axios from "axios";
+import { useLocation } from "react-router-dom";
 
-// import v1 from "../videos/v1.mp4";
-// import v2 from "../videos/v2.mp4";
-// import v3 from "../videos/v3.mp4";
+import synced_1 from "../videos/synced_1.mp4";
+import synced_2 from "../videos/synced_2.mp4";
+import synced_3 from "../videos/synced_3.mp4";
 
-// const ffmpeg = new FFmpeg();
-// const uploadedVideos = [v1, v2, v3];
 
-// export default function VideoTrimmer() {
-//   const [trimRanges, setTrimRanges] = useState([
-//     [0, 100],
-//     [0, 100],
-//     [0, 100],
-//   ]);
-//   const [frames, setFrames] = useState([[], [], []]);
-//   const [trimmedVideos, setTrimmedVideos] = useState([null, null, null]);
+const ffmpeg = new FFmpeg();
+const uploadedVideos = [synced_1,synced_2,synced_3];
 
-//   const videoRefs = [useRef(null), useRef(null), useRef(null)];
+export default function VideoTrimmer() {
+  const location = useLocation();
+  const { selectedRequirement } = location.state || { selectedRequirement: "No requirement selected" };
 
-//   useEffect(() => {
-//     const loadFFmpeg = async () => {
-//       if (!ffmpeg.loaded) {
-//         await ffmpeg.load();
-//       }
-//     };
-//     loadFFmpeg();
-//   }, []);
+  const [trimRanges, setTrimRanges] = useState([
+    [0, 100],
+    [0, 100],
+    [0, 100],
+  ]);
+  const [frames, setFrames] = useState([[], [], []]);
+  const [trimmedVideos, setTrimmedVideos] = useState([null, null, null]);
 
-//   // Extract frames from the video
-//   const extractFrames = (video, index) => {
-//     const canvas = document.createElement("canvas");
-//     const ctx = canvas.getContext("2d");
-//     const extractedFrames = [];
-//     const duration = video.duration;
-//     const frameInterval = duration / 20; // Extract 20 frames
+  const videoRefs = [useRef(null), useRef(null), useRef(null)];
+  const [uploadStatus, setUploadStatus] = useState([false, false, false]); // Track uploads
+  const [allUploaded, setAllUploaded] = useState(false);
+
+  useEffect(() => {
+    const loadFFmpeg = async () => {
+      if (!ffmpeg.loaded) {
+        await ffmpeg.load();
+      }
+    };
+    loadFFmpeg();
+  }, []);
+
+
+  useEffect(() => {
+    if (uploadStatus.every(status => status)) {
+      setAllUploaded(true);
+    }
+  }, [uploadStatus]);
+  
+  // Extract frames from the video
+  const extractFrames = (video, index) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const extractedFrames = [];
+    const duration = video.duration;
+    const frameInterval = duration / 20; // Extract 20 frames
 
 //     let captureFrame = (time) => {
 //       video.currentTime = time;
@@ -115,24 +130,57 @@
 //       outputName
 //     ]);
 
-//     const data = await ffmpeg.readFile(outputName);
-//     const url = URL.createObjectURL(new Blob([data], { type: "video/mp4" }));
+    const data = await ffmpeg.readFile(outputName);
+    const trimmedBlob = new Blob([data], { type: "video/H264" });
+    const url = URL.createObjectURL(new Blob([data], { type: "video/H264" }));
 
-//     setTrimmedVideos((prev) => {
-//       const newVideos = [...prev];
-//       newVideos[index] = url;
-//       return newVideos;
-//     });
-//   };
+    setTrimmedVideos((prev) => {
+      const newVideos = [...prev];
+      newVideos[index] = url;
+      return newVideos;
+    });
 
-//   return (
-//     <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, p: 3 }}>
-//       <Typography variant="h5" fontWeight="bold" align="center" gutterBottom>
-//         Trim Videos & Highlight Frames
-//       </Typography>
-//       <Typography variant="body2" color="textSecondary" align="center" mb={3}>
-//         Select the relevant part of each video using the sliders. The selected section is highlighted in the frame preview.
-//       </Typography>
+    // Send trimmed video to backend
+    const formData = new FormData();
+    formData.append("file", trimmedBlob, `trimmed${index}.mp4`);
+    
+    try {
+      await axios.post("http://localhost:8000/uploadTrimedVideos/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log(`Trimmed video ${index + 1} uploaded successfully`);
+
+      setUploadStatus((prev) => {
+        const newStatus = [...prev];
+        newStatus[index] = true;
+        return newStatus;
+      });
+            
+    } catch (error) {
+      console.error(`Error uploading video ${index + 1}:`, error);
+    }
+  };
+
+  // Function to call processAndDump API after successful uploads
+const callProcessAndDump = async () => {
+  try {
+      const response = await axios.post("http://localhost:8000/processAndDump");
+      console.log("processAndDump triggered successfully:", response.data);
+      alert("Processing and Dumping Completed!");
+  } catch (error) {
+      console.error("Error calling processAndDump:", error);
+  }
+};
+
+  return (
+    <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, p: 3 }}>
+      <Typography variant="h5" fontWeight="bold" align="center" gutterBottom>
+        Trim Videos & Highlight Frames
+      </Typography>
+      <Typography variant="h6" align="center">Requirement: {selectedRequirement}</Typography>
+      <Typography variant="body2" color="textSecondary" align="center" mb={3}>
+        Select the relevant part of each video using the sliders. The selected section is highlighted in the frame preview.
+      </Typography>
 
 //       <Grid container spacing={4}>
 //         {uploadedVideos.map((video, index) => (
@@ -212,22 +260,34 @@
 //                 Trim Video
 //               </Button>
 
-//               {/* Trimmed Video Preview */}
-//               {trimmedVideos[index] && (
-//                 <Box sx={{ mt: 2 }}>
-//                   <Typography variant="subtitle1">Trimmed Video</Typography>
-//                   <video src={trimmedVideos[index]} controls width="100%" />
-//                   <a href={trimmedVideos[index]} download={`trimmed${index + 1}.mp4`}>
-//                     <Button variant="outlined" color="secondary" sx={{ mt: 1 }}>
-//                       Download Trimmed Video
-//                     </Button>
-//                   </a>
-//                 </Box>
-//               )}
-//             </Paper>
-//           </Grid>
-//         ))}
-//       </Grid>
-//     </Box>
-//   );
-// }
+              {/* Trimmed Video Preview */}
+              {trimmedVideos[index] && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle1">Trimmed Video</Typography>
+                  <video src={trimmedVideos[index]} controls width="100%" />
+                  <a href={trimmedVideos[index]} download={`trimmed${index + 1}.mp4`}>
+                    <Button variant="outlined" color="secondary" sx={{ mt: 1 }}>
+                      Download Trimmed Video
+                    </Button>
+                  </a>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+      {/* Show "Process & Dump" button when all videos are uploaded */}
+      {allUploaded && (
+        <Box textAlign="center" mt={4}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={callProcessAndDump}
+          >
+            Process & Dump
+          </Button>
+        </Box>
+      )}
+    </Box>
+  );
+}

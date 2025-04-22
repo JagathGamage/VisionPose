@@ -9,6 +9,7 @@ import Trimvideos from "./pages/trimvideos.js";
 import RequirementSelector from './components/RequirementSelector.js';
 import VideoTrimmer from './components/VideoTrimmer.js';
 import GraphDashboard from './components/Graphs.js';
+import VideoUpload from './components/VideoUpload.js';
 
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
         <Route path='/Login' element={<Login />} />
         <Route path='/Signup' element={<Signup />} />
 
-        <Route path='/UploadFiles' element={<UploadFiles />} />
+        <Route path='/UploadFiles' element={<VideoUpload />} />
 
         <Route path='/Trimvideos' element={<Trimvideos />} />
         trimvideos

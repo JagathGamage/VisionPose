@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, Typography, Button, Grid } from "@mui/material";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const requirements = [
   "Full Bowling Action Analysis",
@@ -16,6 +17,11 @@ const requirements = [
 
 export default function RequirementSelector() {
   const [selectedRequirement, setSelectedRequirement] = useState("");
+  const navigate = useNavigate(); // Initialize navigation
+
+  const handleNext = () => {
+    navigate("/videoTrimmer", { state: { selectedRequirement } }); // Navigate to video trim page
+  };
 
   return (
     <Card sx={{ maxWidth: 600, mx: "auto", p: 3, boxShadow: 3, borderRadius: 2 }}>
@@ -51,14 +57,27 @@ export default function RequirementSelector() {
 
       {/* Display Selected Requirement */}
       {selectedRequirement && (
-        <Card sx={{ mt: 3, p: 2, bgcolor: "primary.light", color: "white" }}>
-          <Typography variant="h6" align="center">
-            Selected Requirement:
-          </Typography>
-          <Typography variant="body1" align="center" fontWeight="bold">
-            {selectedRequirement}
-          </Typography>
-        </Card>
+        <>
+          <Card sx={{ mt: 3, p: 2, bgcolor: "primary.light", color: "white" }}>
+            <Typography variant="h6" align="center">
+              Selected Requirement:
+            </Typography>
+            <Typography variant="body1" align="center" fontWeight="bold">
+              {selectedRequirement}
+            </Typography>
+          </Card>
+
+          {/* Next Button */}
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 3, py: 1.5, borderRadius: 2 }}
+            onClick={handleNext}
+          >
+            Next
+          </Button>
+        </>
       )}
     </Card>
   );
