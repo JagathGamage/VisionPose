@@ -53,82 +53,82 @@ export default function VideoTrimmer() {
     const duration = video.duration;
     const frameInterval = duration / 20; // Extract 20 frames
 
-//     let captureFrame = (time) => {
-//       video.currentTime = time;
-//       setTimeout(() => {
-//         canvas.width = video.videoWidth / 2; // Bigger frames
-//         canvas.height = video.videoHeight / 2;
-//         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-//         extractedFrames.push(canvas.toDataURL("image/png"));
-//         if (extractedFrames.length < 20) {
-//           captureFrame(time + frameInterval);
-//         } else {
-//           setFrames((prevFrames) => {
-//             const newFrames = [...prevFrames];
-//             newFrames[index] = extractedFrames;
-//             return newFrames;
-//           });
-//         }
-//       }, 200);
-//     };
+    let captureFrame = (time) => {
+      video.currentTime = time;
+      setTimeout(() => {
+        canvas.width = video.videoWidth / 2; // Bigger frames
+        canvas.height = video.videoHeight / 2;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        extractedFrames.push(canvas.toDataURL("image/png"));
+        if (extractedFrames.length < 20) {
+          captureFrame(time + frameInterval);
+        } else {
+          setFrames((prevFrames) => {
+            const newFrames = [...prevFrames];
+            newFrames[index] = extractedFrames;
+            return newFrames;
+          });
+        }
+      }, 200);
+    };
 
-//     captureFrame(0);
-//   };
+    captureFrame(0);
+  };
 
-//   // Handle Trim Range Change
-//   const handleTrimChange = (index, newValue) => {
-//     const newTrimRanges = [...trimRanges];
-//     newTrimRanges[index] = newValue;
-//     setTrimRanges(newTrimRanges);
+  // Handle Trim Range Change
+  const handleTrimChange = (index, newValue) => {
+    const newTrimRanges = [...trimRanges];
+    newTrimRanges[index] = newValue;
+    setTrimRanges(newTrimRanges);
 
-//     // Adjust video to the new start time
-//     const video = videoRefs[index].current;
-//     if (video) {
-//       const duration = video.duration;
-//       const newStart = (newValue[0] / 100) * duration;
-//       video.currentTime = newStart;
-//     }
-//   };
+    // Adjust video to the new start time
+    const video = videoRefs[index].current;
+    if (video) {
+      const duration = video.duration;
+      const newStart = (newValue[0] / 100) * duration;
+      video.currentTime = newStart;
+    }
+  };
 
-//   // Handle video time updates to restrict play within the trim range
-//   const handleTimeUpdate = (index) => {
-//     const video = videoRefs[index].current;
-//     if (!video) return;
+  // Handle video time updates to restrict play within the trim range
+  const handleTimeUpdate = (index) => {
+    const video = videoRefs[index].current;
+    if (!video) return;
 
-//     const duration = video.duration;
-//     const [startPercent, endPercent] = trimRanges[index];
-//     const startTime = (startPercent / 100) * duration;
-//     const endTime = (endPercent / 100) * duration;
+    const duration = video.duration;
+    const [startPercent, endPercent] = trimRanges[index];
+    const startTime = (startPercent / 100) * duration;
+    const endTime = (endPercent / 100) * duration;
 
-//     if (video.currentTime >= endTime) {
-//       video.currentTime = startTime; // Restart at start of trimmed section
-//       video.play();
-//     }
-//   };
+    if (video.currentTime >= endTime) {
+      video.currentTime = startTime; // Restart at start of trimmed section
+      video.play();
+    }
+  };
 
-//   // Trim the video using FFmpeg.wasm
-//   const handleTrim = async (index) => {
-//     if (!ffmpeg.loaded) await ffmpeg.load();
+  // Trim the video using FFmpeg.wasm
+  const handleTrim = async (index) => {
+    if (!ffmpeg.loaded) await ffmpeg.load();
 
-//     const inputName = `input${index}.mp4`;
-//     const outputName = `trimmed${index}.mp4`;
+    const inputName = `input${index}.mp4`;
+    const outputName = `trimmed${index}.mp4`;
 
-//     // Convert video to a format FFmpeg can process
-//     const videoBlob = await fetchFile(uploadedVideos[index]);
-//     await ffmpeg.writeFile(inputName, videoBlob);
+    // Convert video to a format FFmpeg can process
+    const videoBlob = await fetchFile(uploadedVideos[index]);
+    await ffmpeg.writeFile(inputName, videoBlob);
 
-//     const video = videoRefs[index].current;
-//     const duration = video.duration;
-//     const startTime = (trimRanges[index][0] / 100) * duration;
-//     const endTime = (trimRanges[index][1] / 100) * duration;
+    const video = videoRefs[index].current;
+    const duration = video.duration;
+    const startTime = (trimRanges[index][0] / 100) * duration;
+    const endTime = (trimRanges[index][1] / 100) * duration;
 
-//     await ffmpeg.exec([
-//       "-i", inputName,
-//       "-ss", `${startTime}`,
-//       "-to", `${endTime}`,
-//       "-c", "copy",
-//       outputName
-//     ]);
+    await ffmpeg.exec([
+      "-i", inputName,
+      "-ss", `${startTime}`,
+      "-to", `${endTime}`,
+      "-c", "copy",
+      outputName
+    ]);
 
     const data = await ffmpeg.readFile(outputName);
     const trimmedBlob = new Blob([data], { type: "video/H264" });
@@ -182,83 +182,83 @@ const callProcessAndDump = async () => {
         Select the relevant part of each video using the sliders. The selected section is highlighted in the frame preview.
       </Typography>
 
-//       <Grid container spacing={4}>
-//         {uploadedVideos.map((video, index) => (
-//           <Grid item xs={12} sm={4} key={index}>
-//             <Paper elevation={3} sx={{ p: 3, textAlign: "center" }}>
-//               <Typography variant="h6">Video {index + 1}</Typography>
-//               <video
-//                 ref={videoRefs[index]}
-//                 controls
-//                 src={video}
-//                 width="100%"
-//                 height="300px"
-//                 style={{
-//                   marginTop: "10px",
-//                   borderRadius: "8px",
-//                   border: "2px solid #ccc",
-//                 }}
-//                 onLoadedMetadata={() => extractFrames(videoRefs[index].current, index)}
-//                 onTimeUpdate={() => handleTimeUpdate(index)}
-//               />
+      <Grid container spacing={4}>
+        {uploadedVideos.map((video, index) => (
+          <Grid item xs={12} sm={4} key={index}>
+            <Paper elevation={3} sx={{ p: 3, textAlign: "center" }}>
+              <Typography variant="h6">Video {index + 1}</Typography>
+              <video
+                ref={videoRefs[index]}
+                controls
+                src={video}
+                width="100%"
+                height="300px"
+                style={{
+                  marginTop: "10px",
+                  borderRadius: "8px",
+                  border: "2px solid #ccc",
+                }}
+                onLoadedMetadata={() => extractFrames(videoRefs[index].current, index)}
+                onTimeUpdate={() => handleTimeUpdate(index)}
+              />
 
-//               {/* Trim Slider */}
-//               <Slider
-//                 value={trimRanges[index]}
-//                 onChange={(e, newValue) => handleTrimChange(index, newValue)}
-//                 valueLabelDisplay="auto"
-//                 min={0}
-//                 max={100}
-//                 step={1}
-//                 sx={{ mt: 2 }}
-//               />
+              {/* Trim Slider */}
+              <Slider
+                value={trimRanges[index]}
+                onChange={(e, newValue) => handleTrimChange(index, newValue)}
+                valueLabelDisplay="auto"
+                min={0}
+                max={100}
+                step={1}
+                sx={{ mt: 2 }}
+              />
 
-//               <Typography variant="body2" color="textSecondary">
-//                 Trim from {trimRanges[index][0]}% to {trimRanges[index][1]}%
-//               </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Trim from {trimRanges[index][0]}% to {trimRanges[index][1]}%
+              </Typography>
 
-//               {/* Frame Preview */}
-//               <Box
-//                 sx={{
-//                   display: "flex",
-//                   overflowX: "auto",
-//                   mt: 2,
-//                   p: 2,
-//                   bgcolor: "#f5f5f5",
-//                   borderRadius: "8px",
-//                   border: "2px solid #ddd",
-//                 }}
-//               >
-//                 {frames[index].map((frame, i) => {
-//                   const isHighlighted =
-//                     i >= Math.floor((trimRanges[index][0] / 100) * 20) &&
-//                     i <= Math.ceil((trimRanges[index][1] / 100) * 20);
-//                   return (
-//                     <img
-//                       key={i}
-//                       src={frame}
-//                       alt={`Frame ${i}`}
-//                       style={{
-//                         width: "100px",
-//                         height: "auto",
-//                         marginRight: "8px",
-//                         border: isHighlighted ? "3px solid red" : "2px solid gray",
-//                         borderRadius: "6px",
-//                       }}
-//                     />
-//                   );
-//                 })}
-//               </Box>
+              {/* Frame Preview */}
+              <Box
+                sx={{
+                  display: "flex",
+                  overflowX: "auto",
+                  mt: 2,
+                  p: 2,
+                  bgcolor: "#f5f5f5",
+                  borderRadius: "8px",
+                  border: "2px solid #ddd",
+                }}
+              >
+                {frames[index].map((frame, i) => {
+                  const isHighlighted =
+                    i >= Math.floor((trimRanges[index][0] / 100) * 20) &&
+                    i <= Math.ceil((trimRanges[index][1] / 100) * 20);
+                  return (
+                    <img
+                      key={i}
+                      src={frame}
+                      alt={`Frame ${i}`}
+                      style={{
+                        width: "100px",
+                        height: "auto",
+                        marginRight: "8px",
+                        border: isHighlighted ? "3px solid red" : "2px solid gray",
+                        borderRadius: "6px",
+                      }}
+                    />
+                  );
+                })}
+              </Box>
 
-//               {/* Trim Button */}
-//               <Button
-//                 variant="contained"
-//                 color="primary"
-//                 sx={{ mt: 2 }}
-//                 onClick={() => handleTrim(index)}
-//               >
-//                 Trim Video
-//               </Button>
+              {/* Trim Button */}
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+                onClick={() => handleTrim(index)}
+              >
+                Trim Video
+              </Button>
 
               {/* Trimmed Video Preview */}
               {trimmedVideos[index] && (
