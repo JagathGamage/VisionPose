@@ -1,12 +1,13 @@
 import React, { useState, useRef } from "react";
 import { Typography, Button, Grid, Box, Paper } from "@mui/material";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
 
 import v1 from "../initialVideos/v1.mp4";
 import v2 from "../initialVideos/v2.mp4";
 import v3 from "../initialVideos/v3.mp4";
 
-const ffmpeg = new FFmpeg({ log: true });
+const ffmpeg = new FFmpeg();
 const uploadedVideos = [v1, v2, v3];
 
 function TrimVideos() {
@@ -26,10 +27,8 @@ function TrimVideos() {
       frameTimes.push(i * step);
     }
 
-    // Wait for FFmpeg to load
-    await ffmpeg.load();
+    if (!ffmpeg.loaded) await ffmpeg.load();
 
-    // Generate frame images using FFmpeg at specified times
     const frameUrls = await Promise.all(
       frameTimes.map(async (time) => {
         const imageBlob = await getFrameFromVideo(videoEl, time, index);
@@ -49,19 +48,16 @@ function TrimVideos() {
     const inputName = `input${index}.mp4`;
     const outputName = `frame${index}-${time}.png`;
 
-    // Write the video file to FFmpeg's filesystem
-    ffmpeg.FS("writeFile", inputName, await ffmpeg.fetchFile(videoFile));
+    ffmpeg.FS("writeFile", inputName, await fetchFile(videoFile));
 
-    // Run FFmpeg to extract the frame at the specific time
     await ffmpeg.run(
       "-i", inputName,
-      "-ss", `${time}`,  // Time for the frame extraction
-      "-vframes", "1",   // Extract one frame
-      "-vf", "scale=320:-1", // Resize for thumbnail
+      "-ss", `${time}`,
+      "-vframes", "1",
+      "-vf", "scale=320:-1",
       outputName
     );
 
-    // Read the frame data from FFmpeg's filesystem
     const data = ffmpeg.FS("readFile", outputName);
     return new Blob([data.buffer], { type: "image/png" });
   };
@@ -71,18 +67,15 @@ function TrimVideos() {
     const inputName = `input${index}.mp4`;
     const outputName = `output${index}.mp4`;
 
-    // Wait for FFmpeg to load
-    await ffmpeg.load();
+    if (!ffmpeg.loaded) await ffmpeg.load();
 
-    // Write the video file to FFmpeg's filesystem
-    ffmpeg.FS("writeFile", inputName, await ffmpeg.fetchFile(videoFile));
+    ffmpeg.FS("writeFile", inputName, await fetchFile(videoFile));
 
     const duration = videoRefs.current[index].current.duration;
     const [startPercent, endPercent] = trimRanges[index];
     const startTime = (startPercent / 100) * duration;
     const endTime = (endPercent / 100) * duration;
 
-    // Run FFmpeg to trim the video
     await ffmpeg.run(
       "-i", inputName,
       "-ss", `${startTime}`,
@@ -142,7 +135,9 @@ function TrimVideos() {
                   borderRadius: "8px",
                   border: "2px solid #ccc",
                 }}
-                onLoadedMetadata={() => extractFrames(videoRefs.current[index].current, index)}
+                onLoadedMetadata={() =>
+                  extractFrames(videoRefs.current[index].current, index)
+                }
               />
 
               <Box
@@ -176,6 +171,14 @@ function TrimVideos() {
                   );
                 })}
               </Box>
+
+              <Button
+                variant="contained"
+                onClick={() => handleTrim(index)}
+                sx={{ mt: 2 }}
+              >
+                Trim Video
+              </Button>
 
               {trimmedVideos[index] && (
                 <Box sx={{ mt: 2 }}>
