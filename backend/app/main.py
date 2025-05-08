@@ -7,7 +7,9 @@ from typing import List
 import shutil
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pose.DPoseEstimationUsingYOLOv7 import process_and_dump
+from fastapi.responses import JSONResponse
+from uuid import uuid4
+# from pose.DPoseEstimationUsingYOLOv7 import process_and_dump
 
 # process_and_dump()
 
@@ -22,6 +24,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+UPLOAD_DIR = "uploaded_videos"
+SYNCED_DIR = "synced_videos"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(SYNCED_DIR, exist_ok=True)
 
 # Directory to save projects and serve static files
 PROJECTS_DIR = "projects"
@@ -39,69 +45,51 @@ async def hello():
     return "hello"
 
 @app.post("/upload/")
-async def upload_videos(
-    project_name: str = Form(...),
-    files: List[UploadFile] = File(...),
-):
-    if len(files) != 3:
-        return {"error": "Exactly 3 video files are required"}
+async def upload_videos(project_name: str = Form(...), files: List[UploadFile] = File(...)):
+    saved_files = []
 
-    project_path = os.path.join(PROJECTS_DIR, project_name)
-    os.makedirs(project_path, exist_ok=True)
-
-    video_paths = []
     for file in files:
-        video_path = os.path.join(project_path, file.filename)
-        with open(video_path, "wb") as buffer:
-            buffer.write(await file.read())
-        video_paths.append(video_path)
+        filename = f"{uuid4()}_{file.filename}"
+        path = os.path.join(UPLOAD_DIR, filename)
+        with open(path, "wb") as f:
+            f.write(await file.read())
+        saved_files.append(path)
 
-    # Sync videos
-    synced_paths = sync_videos(video_paths, project_path)
-    
-    # Move synced videos to frontend static folder
-    for path in synced_paths:
-        shutil.move(path, os.path.join(STATIC_FILES_DIR, os.path.basename(path)))
+    return JSONResponse({
+        "message": "Videos uploaded successfully",
+        "saved_files": saved_files
+    })
 
-    return {"message": "Videos uploaded, synced, and moved to frontend folder", "synced_files": synced_paths}
 
-def sync_videos(video_paths, project_path):
-    """Syncs videos based on the first common frame"""
-    caps = [cv2.VideoCapture(vp) for vp in video_paths]
-    first_frames = []
+@app.post("/sync/")
+async def sync_videos(file_paths: List[UploadFile] = File(...), sync_times: List[float] = Form(...)):
+    synced_paths = []
 
-    for cap in caps:
-        ret, frame = cap.read()
-        if ret:
-            first_frames.append(frame)
+    for idx, file in enumerate(file_paths):
+        filename = f"{uuid4()}_{file.filename}"
+        video_path = os.path.join(UPLOAD_DIR, filename)
+        with open(video_path, "wb") as f:
+            f.write(await file.read())
 
-    ref_frame = first_frames[0]
-    
-    # Finding sync points (first matching frame)
-    sync_points = []
-    for cap in caps:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        frame_index = 0
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if np.array_equal(frame, ref_frame):
-                sync_points.append(frame_index)
-                break
-            frame_index += 1
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_number = int(sync_times[idx] * fps)
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+        success, frame = cap.read()
+        if success:
+            out_path = os.path.join(SYNCED_DIR, f"synced_{idx}_{file.filename}")
+            height, width, _ = frame.shape
+            out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+            out.write(frame)
+            out.release()
+            synced_paths.append(out_path)
         cap.release()
 
-    min_sync = min(sync_points)
-
-    # Trim videos to sync
-    synced_paths = []
-    for idx, vp in enumerate(video_paths):
-        trimmed_path = os.path.join(project_path, f"synced_{idx+1}.mp4")
-        trim_video(vp, trimmed_path, min_sync)
-        synced_paths.append(trimmed_path)
-
-    return synced_paths
+    return JSONResponse({
+        "message": "Videos synced successfully by selected frames.",
+        "synced_files": synced_paths
+    })
 
 def trim_video(input_path, output_path, start_frame):
     """Trims the video starting from the given frame"""
@@ -127,13 +115,13 @@ def trim_video(input_path, output_path, start_frame):
     out.release()
 
 # Directory to save videos
-UPLOAD_DIR = "backend_videos"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+TRIM_DIR = "trimed_videos"
+os.makedirs(TRIM_DIR, exist_ok=True)
 
 @app.post("/uploadTrimedVideos/")
 async def upload_trimed_video(file: UploadFile = File(...)):
     try:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        file_path = os.path.join(TRIM_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         return {"message": f"Video '{file.filename}' uploaded successfully"}
