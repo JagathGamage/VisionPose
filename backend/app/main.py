@@ -1,4 +1,5 @@
-from http.client import HTTPException
+from fastapi import HTTPException 
+import uuid
 from fastapi import FastAPI, File, UploadFile, Form
 import os
 import cv2
@@ -9,9 +10,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from uuid import uuid4
+
 # from pose.DPoseEstimationUsingYOLOv7 import process_and_dump
 
+HOME = os.getcwd()
+print(HOME)
+
 # process_and_dump()
+# Navigate from backend/app → backend → project-root → frontend/public/videos
+SYNCED_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend','frontend', 'public', 'videos'))
+os.makedirs(SYNCED_DIR, exist_ok=True)
 
 
 app = FastAPI()
@@ -19,19 +27,19 @@ app = FastAPI()
 # CORS Middleware (Allow React frontend to access the API)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Change to frontend URL in production
+    allow_origins=["*"],  # Change to frontend URL in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 UPLOAD_DIR = "uploaded_videos"
-SYNCED_DIR = "synced_videos"
+# SYNCED_DIR = "synced_videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(SYNCED_DIR, exist_ok=True)
+# os.makedirs(SYNCED_DIR, exist_ok=True)
 
 # Directory to save projects and serve static files
 PROJECTS_DIR = "projects"
-STATIC_FILES_DIR = "C:/Users/Jagath/Desktop/VisionPose/VisionPose/frontend/frontend/src/videos"  # Specify your frontend folder here
+STATIC_FILES_DIR = "C:/Users/Jagath/Desktop/VisionPose/VisionPose/frontend/frontend/public/videos"  # Specify your frontend folder here
 
 # Ensure directories exist
 os.makedirs(PROJECTS_DIR, exist_ok=True)
@@ -62,34 +70,59 @@ async def upload_videos(project_name: str = Form(...), files: List[UploadFile] =
 
 
 @app.post("/sync/")
-async def sync_videos(file_paths: List[UploadFile] = File(...), sync_times: List[float] = Form(...)):
-    synced_paths = []
+async def sync_videos(
+    file_paths: List[UploadFile] = File(...),
+    sync_times: List[float] = Form(...)
+):
+    if len(file_paths) != 3 or len(sync_times) != 3:
+        return {"message": "Exactly 3 videos and 3 sync times are required."}
 
-    for idx, file in enumerate(file_paths):
-        filename = f"{uuid4()}_{file.filename}"
-        video_path = os.path.join(UPLOAD_DIR, filename)
-        with open(video_path, "wb") as f:
-            f.write(await file.read())
+    temp_video_paths = []
 
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_number = int(sync_times[idx] * fps)
+    # Save uploaded videos to disk
+    for file in file_paths:
+        temp_path = f"temp_{uuid.uuid4().hex}.mp4"
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        temp_video_paths.append(temp_path)
 
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-        success, frame = cap.read()
-        if success:
-            out_path = os.path.join(SYNCED_DIR, f"synced_{idx}_{file.filename}")
-            height, width, _ = frame.shape
-            out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
-            out.write(frame)
+    try:
+        min_sync_time = min(sync_times)
+        synced_paths = []
+
+        for i, (path, sync_time) in enumerate(zip(temp_video_paths, sync_times)):
+            cap = cv2.VideoCapture(path)
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+
+            output_filename = f"synced_{i+1}.mp4"
+            output_path = os.path.join(SYNCED_DIR, output_filename)
+            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+            start_frame = int((sync_time - min_sync_time) * fps)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                out.write(frame)
+
+            cap.release()
             out.release()
-            synced_paths.append(out_path)
-        cap.release()
+            synced_paths.append(f"/videos/{output_filename}")  # Relative path for frontend
+            print("hello jaga")
 
-    return JSONResponse({
-        "message": "Videos synced successfully by selected frames.",
-        "synced_files": synced_paths
-    })
+        return {"message": "Videos synced successfully.", "output_paths": synced_paths}
+        
+
+    finally:
+        for path in temp_video_paths:
+            os.remove(path)
+        print("finally")
+
 
 def trim_video(input_path, output_path, start_frame):
     """Trims the video starting from the given frame"""
@@ -115,7 +148,8 @@ def trim_video(input_path, output_path, start_frame):
     out.release()
 
 # Directory to save videos
-TRIM_DIR = "trimed_videos"
+TRIM_DIR = os.path.join( "pose", "input")
+# TRIM_DIR = "trimed_videos"
 os.makedirs(TRIM_DIR, exist_ok=True)
 
 @app.post("/uploadTrimedVideos/")
@@ -128,7 +162,10 @@ async def upload_trimed_video(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+SOURCE_VIDEO_A_PATH = f"{HOME}/pose/input/vid1.mp4"
+    
 @app.post("/processAndDump/")
 async def processAndDump():
-    # process_and_dump()
+    #process_and_dump(SOURCE_VIDEO_A_PATH, f"{HOME}/output/pose-estimation-synchronised-sample-a.json", f"{HOME}/output/right-shoulder-angle-a.xlsx", f"{HOME}/output/right-shoulder-angles-sample-a.mp4", f"{HOME}/output/right-shoulder-angles-sample-a.png", f"{HOME}/output")
     print("hello")
