@@ -1,24 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import "./App.css";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import {Login,Signup} from "./Routes.js";
+
+import UploadFiles from "./pages/UploadFiles.js";
+
+import RequirementSelector from './components/RequirementSelector.js';
+import VideoTrimmer from './components/VideoTrimmer.js';
+import GraphDashboard from './components/Graphs.js';
+import VideoUpload from './components/VideoUpload.js';
+import Sync from './components/Sync.js';
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<Login />} />
+        <Route path='/Signup' element={<Signup />} />
+
+        <Route path='/UploadFiles' element={<VideoUpload />} />
+        <Route path='/sync' element={<Sync />} />
+
+        <Route path='/requirementSelector' element={<RequirementSelector />} />
+        <Route path='/videoTrimmer' element={<VideoTrimmer />} />
+        <Route path='/graphs' element={<GraphDashboard />} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 
