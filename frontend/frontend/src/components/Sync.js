@@ -2,6 +2,7 @@
 import { useLocation,useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Box, Typography, Button, Grid, Paper } from "@mui/material";
+import axios from "axios";
 
 export default function Sync() {
   const navigate = useNavigate();
@@ -20,40 +21,48 @@ export default function Sync() {
     video.src = URL.createObjectURL(file);
     video.crossOrigin = "anonymous";
     video.preload = "metadata";
-
+  
     video.addEventListener("loadedmetadata", () => {
       const duration = video.duration;
-      const interval = duration / 10; // 10 thumbnails per video
+      const frameRate = 25; // Assume 25 FPS; you can change this
+      const interval = 1 / frameRate;
+  
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const currentFrames = [];
-
-      const capture = (time) => {
-        video.currentTime = time;
-      };
-
-      video.addEventListener("seeked", function captureFrame() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL();
-        currentFrames.push({ time: video.currentTime, image: dataUrl });
-
-        if (currentFrames.length < 10) {
-          capture(currentFrames.length * interval);
-        } else {
+  
+      let currentTime = 0;
+  
+      const seekAndCapture = () => {
+        if (currentTime > duration) {
           setFrames((prev) => {
             const updated = [...prev];
             updated[index] = currentFrames;
             return updated;
           });
-          video.removeEventListener("seeked", captureFrame);
+          return;
         }
-      });
-
-      capture(0);
+  
+        video.currentTime = currentTime;
+      };
+  
+      const onSeeked = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL();
+        currentFrames.push({ time: video.currentTime, image: dataUrl });
+  
+        currentTime += interval;
+        seekAndCapture(); // Move to next frame
+      };
+  
+      video.addEventListener("seeked", onSeeked);
+      seekAndCapture();
     });
   };
+  
+  
 
   const handleSelectFrame = (videoIndex, frame) => {
     const updated = [...selectedFrames];
@@ -62,41 +71,37 @@ export default function Sync() {
   };
 
   const handleSyncVideos = async () => {
-    if (selectedFrames.some((frame) => !frame)) {
-      alert("Select a frame from each video before syncing.");
-      return;
-    }
-  
-    const formData = new FormData();
-  
-    videos.forEach((videoFile) => {
-      formData.append("file_paths", videoFile);
-    });
-  
-    selectedFrames.forEach((frame) => {
-      formData.append("sync_times", frame.time);
-    });
-  
-    try {
-      const res = await fetch("http://127.0.0.1:8000/sync/", {
-        method: "POST",
-        body: formData,
-      });
-  
-      const data = await res.json();
-      alert(data.message);
-  
-      // Redirect to Requirement Selector page with necessary state
-      navigate("/requirementSelector", {
-        state: { projectName, syncedVideos: videos },
-      });
-  
-    } catch (err) {
-      console.error(err);
-      alert("Failed to sync videos.");
-    }
-  };
-  
+  if (selectedFrames.some((frame) => !frame)) {
+    alert("Select a frame from each video before syncing.");
+    return;
+  }
+
+  const formData = new FormData();
+
+  videos.forEach((videoFile) => {
+    formData.append("file_paths", videoFile);
+  });
+
+  selectedFrames.forEach((frame) => {
+    formData.append("sync_times", frame.time);
+  });
+
+  try {
+    const res = await axios.post("http://127.0.0.1:8000/sync/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 100000, // 5 minutes in milliseconds
+  });
+
+    console.log("Response:", res.data);
+    alert("Success");
+    navigate("/requirementSelector");
+  } catch (err) {
+    console.error("Sync error:", err);
+    alert("Sync failed: " + err.message);
+  }
+};
 
   return (
     <Box p={4}>
