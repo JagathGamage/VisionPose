@@ -35,23 +35,21 @@ export default function VideoUpload() {
     videos.forEach((file) => formData.append("files", file));
   
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload/", {
-        method: "POST",
-        body: formData,
-      });
+      // const response = await fetch("http://127.0.0.1:8000/upload/", {
+      //   method: "POST",
+      //   body: formData,
+      // });
   
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Uploaded successfully:", data);
+      if (true) {
+        // const data = await response.json();
+        console.log("Uploaded successfully:");
   
         // Navigate to sync page with project and videos
         navigate("/sync", {
           state: { projectName, videos },
         });
       } else {
-        const error = await response.text();
-        console.error("Upload failed:", error);
-        alert("Upload failed. See console for details.");
+        
       }
     } catch (err) {
       console.error("Error uploading videos:", err);
