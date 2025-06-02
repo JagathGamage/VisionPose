@@ -638,8 +638,8 @@ def get_frame_count(path: str) -> int:
 # In[ ]:
 
 
-SOURCE_VIDEO_PATH = SOURCE_VIDEO_B_PATH
-TARGET_VIDEO_PATH = f"{HOME}/output/pose-estimation-synchronised-sample-b.mp4"
+SOURCE_VIDEO_PATH = SOURCE_VIDEO_A_PATH
+TARGET_VIDEO_PATH = f"{HOME}/output/pose-estimation-synchronised-sample-a.mp4"
 
 
 # In[ ]:
@@ -986,7 +986,7 @@ def process_and_dump(source_video_path: str, target_json_path: str, target_excel
 
         # Detect foot contact events and step durations
         frame_contact_times, prev_y_positions, prev_contact_times = detect_foot_contact(
-            pose_output, prev_y_positions, prev_contact_times, fps, framae_number
+            pose_output, prev_y_positions, prev_contact_times, fps, frame_number
         )
         contact_events.extends(frame_contact_times)
 

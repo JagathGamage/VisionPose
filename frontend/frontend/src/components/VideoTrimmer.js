@@ -4,10 +4,10 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
+const synced_1 = "/videos/synced_1.mp4";
+const synced_2 = "/videos/synced_2.mp4";
+const synced_3 = "/videos/synced_3.mp4";
 
-import synced_1 from "../videos/synced_1.mp4";
-import synced_2 from "../videos/synced_2.mp4";
-import synced_3 from "../videos/synced_3.mp4";
 
 
 const ffmpeg = new FFmpeg();
@@ -131,10 +131,11 @@ export default function VideoTrimmer() {
     ]);
 
     const data = await ffmpeg.readFile(outputName);
-    const trimmedBlob = new Blob([data], { type: "video/H264" });
-    const url = URL.createObjectURL(new Blob([data], { type: "video/H264" }));
+    const trimmedBlob = new Blob([data], { type: "video/mp4" });
+    const url = URL.createObjectURL(new Blob([data], { type: "video/mp4" }));
 
     setTrimmedVideos((prev) => {
+    
       const newVideos = [...prev];
       newVideos[index] = url;
       return newVideos;

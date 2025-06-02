@@ -9,20 +9,24 @@ import RequirementSelector from './components/RequirementSelector.js';
 import VideoTrimmer from './components/VideoTrimmer.js';
 import GraphDashboard from './components/Graphs.js';
 import VideoUpload from './components/VideoUpload.js';
+import Sync from './components/Sync.js';
+import FinalVideoPage from './components/FinalVideoPage.js';
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/Login' element={<Login />} />
+        <Route path='/' element={<Login />} />
         <Route path='/Signup' element={<Signup />} />
 
         <Route path='/UploadFiles' element={<VideoUpload />} />
+        <Route path='/sync' element={<Sync />} />
 
         <Route path='/requirementSelector' element={<RequirementSelector />} />
         <Route path='/videoTrimmer' element={<VideoTrimmer />} />
         <Route path='/graphs' element={<GraphDashboard />} />
+        <Route path="/final-video" element={<FinalVideoPage />} />
 
       </Routes>
     </BrowserRouter>

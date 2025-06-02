@@ -1,19 +1,14 @@
+// VideoUpload.jsx
 import { useState } from "react";
-import axios from "axios";
-import { Box, Button, Card, CardContent, CardHeader, LinearProgress, Typography, TextField } from "@mui/material";
+import { Box, Button, Card, CardContent, CardHeader, Typography, TextField } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 
-
 export default function VideoUpload() {
-  const navigate = useNavigate();  // Initialize navigate
+  const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [projectName, setProjectName] = useState("");
-  const [message, setMessage] = useState("");
-  const [syncedFiles, setSyncedFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const onDrop = (acceptedFiles) => {
     if (acceptedFiles.length === 3) {
@@ -29,44 +24,39 @@ export default function VideoUpload() {
     multiple: true,
   });
 
-  const handleUpload = async () => {
+  const handleProceed = async () => {
     if (videos.length !== 3 || !projectName) {
       alert("Enter a project name and select exactly 3 videos.");
       return;
     }
-
-    setLoading(true);
-    setMessage("");
-    setProgress(0);
-
+  
     const formData = new FormData();
     formData.append("project_name", projectName);
-    videos.forEach((video) => formData.append("files", video));
-
+    videos.forEach((file) => formData.append("files", file));
+  
     try {
-      const res = await axios.post("http://127.0.0.1:8000/upload/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (progressEvent) => {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setProgress(percent);
-        },
-      });
-
-      setMessage(res.data.message);
-      setSyncedFiles(res.data.synced_files);
-
-      // Redirect to requirement selection page after successful upload
-      setTimeout(() => {
-        navigate("/requirementSelector", { state: { projectName, syncedFiles: res.data.synced_files } });
-      }, 2000); // Delay for 2 seconds to show success message
-
-    } catch (error) {
-      console.error("Upload failed:", error);
-      setMessage("Upload failed.");
-    } finally {
-      setLoading(false);
+      // const response = await fetch("http://127.0.0.1:8000/upload/", {
+      //   method: "POST",
+      //   body: formData,
+      // });
+  
+      if (true) {
+        // const data = await response.json();
+        console.log("Uploaded successfully:");
+  
+        // Navigate to sync page with project and videos
+        navigate("/sync", {
+          state: { projectName, videos },
+        });
+      } else {
+        
+      }
+    } catch (err) {
+      console.error("Error uploading videos:", err);
+      alert("Error uploading videos.");
     }
   };
+  
 
   return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="#f4f6f8">
@@ -81,7 +71,6 @@ export default function VideoUpload() {
             onChange={(e) => setProjectName(e.target.value)}
             sx={{ mb: 2 }}
           />
-
           <Box
             {...getRootProps()}
             sx={{
@@ -112,43 +101,16 @@ export default function VideoUpload() {
             </Box>
           )}
 
-          {loading && (
-            <Box mt={2}>
-              <LinearProgress variant="determinate" value={progress} />
-              <Typography variant="body2" color="textSecondary" textAlign="center">
-                {progress}%
-              </Typography>
-            </Box>
-          )}
-
           <Button
             fullWidth
             variant="contained"
             color="primary"
             startIcon={<CloudUploadIcon />}
             sx={{ mt: 3 }}
-            onClick={handleUpload}
-            disabled={loading}
+            onClick={handleProceed}
           >
-            {loading ? "Uploading..." : "Upload Videos"}
+            Proceed to Sync
           </Button>
-
-          {message && (
-            <Typography variant="body2" color="green" textAlign="center" mt={2}>
-              {message}
-            </Typography>
-          )}
-
-          {syncedFiles.length > 0 && (
-            <Box mt={3}>
-              <Typography variant="subtitle2">Synced Videos:</Typography>
-              {syncedFiles.map((file, index) => (
-                <Typography key={index} variant="body2" color="textSecondary">
-                  {file}
-                </Typography>
-              ))}
-            </Box>
-          )}
         </CardContent>
       </Card>
     </Box>
