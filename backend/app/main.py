@@ -11,10 +11,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from uuid import uuid4
 
-# from pose.DPoseEstimationUsingYOLOv7 import process_and_dump
+from pose.DPoseEstimationUsingYOLOv7 import process_and_dump ,generate_animation
 
-HOME = os.getcwd()
-print(HOME)
+
+os.chdir('..')
+HOME1 = os.getcwd()
+print("HOME1== ",HOME1)
 
 # process_and_dump()
 # Navigate from backend/app → backend → project-root → frontend/public/videos
@@ -39,7 +41,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Directory to save projects and serve static files
 PROJECTS_DIR = "projects"
-STATIC_FILES_DIR = "C:/Users/Jagath/Desktop/VisionPose/VisionPose/frontend/frontend/public/videos"  # Specify your frontend folder here
+STATIC_FILES_DIR = "C:/Users/ucsc/Desktop/vs/VisionPose/frontend/frontend/public/videos"  # Specify your frontend folder here
 
 # Ensure directories exist
 os.makedirs(PROJECTS_DIR, exist_ok=True)
@@ -163,9 +165,21 @@ async def upload_trimed_video(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
-SOURCE_VIDEO_A_PATH = f"{HOME}/pose/input/vid1.mp4"
+SOURCE_VIDEO_A_PATH = f"{HOME1}/pose/input/vid1.mp4"
+SOURCE_VIDEO_B_PATH = f"{HOME1}/pose/input/vid1.mp4"
+SOURCE_VIDEO_C_PATH = f"{HOME1}/pose/input/vid1.mp4"
     
 @app.post("/processAndDump/")
 async def processAndDump():
-    #process_and_dump(SOURCE_VIDEO_A_PATH, f"{HOME}/output/pose-estimation-synchronised-sample-a.json", f"{HOME}/output/right-shoulder-angle-a.xlsx", f"{HOME}/output/right-shoulder-angles-sample-a.mp4", f"{HOME}/output/right-shoulder-angles-sample-a.png", f"{HOME}/output")
+    process_and_dump(SOURCE_VIDEO_A_PATH, f"{HOME1}/pose/output/pose-estimation-synchronised-sample-a.json", f"{HOME1}/pose/output/right-shoulder-angle-a.xlsx", f"{HOME1}/pose/output/right-shoulder-angles-sample-a.mp4", f"{HOME1}/pose/output/right-shoulder-angles-sample-a.png", f"{HOME1}/pose/output")
     print("hello")
+    process_and_dump(SOURCE_VIDEO_B_PATH, f"{HOME1}/pose/output/pose-estimation-synchronised-sample-b.json", f"{HOME1}/pose/output/right-shoulder-angle-b.xlsx", f"{HOME1}/pose/output/right-shoulder-angles-sample-b.mp4", f"{HOME1}/pose/output/right-shoulder-angles-sample-b.png", f"{HOME1}/pose/output")
+    print("hello")
+    process_and_dump(SOURCE_VIDEO_C_PATH, f"{HOME1}/pose/output/pose-estimation-synchronised-sample-c.json", f"{HOME1}/pose/output/right-shoulder-angle-c.xlsx", f"{HOME1}/pose/output/right-shoulder-angles-sample-c.mp4", f"{HOME1}/pose/output/right-shoulder-angles-sample-c.png", f"{HOME1}/pose/output")
+    print("hello")
+
+@app.post("/animation/")
+async def animation():
+    print("HOME1 in ani",HOME1)
+    generate_animation()
+    return "success anime"
