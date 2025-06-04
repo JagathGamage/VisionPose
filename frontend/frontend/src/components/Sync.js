@@ -1,5 +1,5 @@
-// RequirementSelector.jsx
-import { useLocation,useNavigate } from "react-router-dom";
+// src/components/Sync.jsx
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Box, Typography, Button, Grid, Paper } from "@mui/material";
 import axios from "axios";
@@ -8,12 +8,15 @@ export default function Sync() {
   const navigate = useNavigate();
   const location = useLocation();
   const { videos = [], projectName } = location.state || {};
+
+  // We only handle exactly three videos here—but add guards if needed
   const videoRefs = [useRef(), useRef(), useRef()];
   const [frames, setFrames] = useState([[], [], []]);
   const [selectedFrames, setSelectedFrames] = useState([null, null, null]);
 
   useEffect(() => {
-    videos.forEach((video, i) => extractFrames(video, i));
+    // As soon as “videos” arrives (from the previous page), extract all frames for each video:
+    videos.forEach((file, idx) => extractFrames(file, idx));
   }, [videos]);
 
   const extractFrames = (file, index) => {
@@ -21,87 +24,82 @@ export default function Sync() {
     video.src = URL.createObjectURL(file);
     video.crossOrigin = "anonymous";
     video.preload = "metadata";
-  
+
     video.addEventListener("loadedmetadata", () => {
       const duration = video.duration;
-      const frameRate = 25; // Assume 25 FPS; you can change this
+      const frameRate = 25; // assume 25 FPS
       const interval = 1 / frameRate;
-  
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      const currentFrames = [];
-  
+      const collected = [];
       let currentTime = 0;
-  
+
       const seekAndCapture = () => {
         if (currentTime > duration) {
           setFrames((prev) => {
-            const updated = [...prev];
-            updated[index] = currentFrames;
-            return updated;
+            const copy = [...prev];
+            copy[index] = collected;
+            return copy;
           });
           return;
         }
-  
         video.currentTime = currentTime;
       };
-  
+
       const onSeeked = () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL();
-        currentFrames.push({ time: video.currentTime, image: dataUrl });
-  
+        collected.push({ time: video.currentTime, image: dataUrl });
         currentTime += interval;
-        seekAndCapture(); // Move to next frame
+        seekAndCapture();
       };
-  
+
       video.addEventListener("seeked", onSeeked);
       seekAndCapture();
     });
   };
-  
-  
 
   const handleSelectFrame = (videoIndex, frame) => {
-    const updated = [...selectedFrames];
-    updated[videoIndex] = frame;
-    setSelectedFrames(updated);
+    const copy = [...selectedFrames];
+    copy[videoIndex] = frame;
+    setSelectedFrames(copy);
   };
 
   const handleSyncVideos = async () => {
-  if (selectedFrames.some((frame) => !frame)) {
-    alert("Select a frame from each video before syncing.");
-    return;
-  }
+    // 1) Make sure user clicked exactly one frame for each of the three videos:
+    if (selectedFrames.some((f) => f === null)) {
+      alert("Please select one frame from each of the three videos before syncing.");
+      return;
+    }
 
-  const formData = new FormData();
+    const formData = new FormData();
 
-  videos.forEach((videoFile) => {
-    formData.append("file_paths", videoFile);
-  });
+    // 2) Append each file under the SAME key "file_paths", and pass its filename explicitly:
+    videos.forEach((fileObj) => {
+      formData.append("file_paths", fileObj, fileObj.name);
+    });
 
-  selectedFrames.forEach((frame) => {
-    formData.append("sync_times", frame.time);
-  });
+    // 3) Append each sync time (as a string) under "sync_times"
+    selectedFrames.forEach((frame) => {
+      formData.append("sync_times", frame.time.toString());
+    });
 
-  try {
-    const res = await axios.post("http://127.0.0.1:8000/sync/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    timeout: 100000, // 5 minutes in milliseconds
-  });
-
-    console.log("Response:", res.data);
-    alert("Success");
-    navigate("/requirementSelector");
-  } catch (err) {
-    console.error("Sync error:", err);
-    alert("Sync failed: " + err.message);
-  }
-};
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/sync/", formData, {
+        // DO NOT set Content-Type manually! Let Axios set the proper boundary:
+        timeout: 100000,
+      });
+      console.log("FastAPI responded with:", res.data);
+      alert("Videos synced successfully!");
+      navigate("/requirementSelector");
+    } catch (err) {
+      console.error("Sync error:", err);
+      const detail = err.response?.data?.detail || err.message;
+      alert("Sync failed: " + detail);
+    }
+  };
 
   return (
     <Box p={4}>
@@ -133,11 +131,12 @@ export default function Sync() {
                 pb: 1,
               }}
             >
-
               {frames[index].map((frame, idx) => (
                 <Paper
                   key={idx}
-                  elevation={selectedFrames[index]?.time === frame.time ? 4 : 1}
+                  elevation={
+                    selectedFrames[index]?.time === frame.time ? 4 : 1
+                  }
                   onClick={() => handleSelectFrame(index, frame)}
                   sx={{
                     border:
@@ -148,7 +147,11 @@ export default function Sync() {
                     p: 0.5,
                   }}
                 >
-                  <img src={frame.image} alt={`frame-${idx}`} width="100" />
+                  <img
+                    src={frame.image}
+                    alt={`frame-${index}-${idx}`}
+                    width="100"
+                  />
                 </Paper>
               ))}
             </Box>
