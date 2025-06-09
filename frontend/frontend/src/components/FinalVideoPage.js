@@ -166,7 +166,7 @@ export default function FinalVideoPage() {
                 <video
                   id="final-video"
                   width="75%"
-                  src="/path/to/final-video.mp4"
+                  src="http://127.0.0.1:8000/animation/output_video.mp4"
                   poster="/path/to/thumbnail.jpg"
                   preload="auto"
                   style={{ display: "block" }}

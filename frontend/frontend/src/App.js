@@ -11,6 +11,7 @@ import GraphDashboard from './components/Graphs.js';
 import VideoUpload from './components/VideoUpload.js';
 import Sync from './components/Sync.js';
 import FinalVideoPage from './components/FinalVideoPage.js';
+import VideoDisplay from './components/VideoDisplay.js';
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         <Route path='/videoTrimmer' element={<VideoTrimmer />} />
         <Route path='/graphs' element={<GraphDashboard />} />
         <Route path="/final-video" element={<FinalVideoPage />} />
+        <Route path="/videoDisplay" element={<VideoDisplay />} />
 
       </Routes>
     </BrowserRouter>

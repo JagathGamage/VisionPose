@@ -36,7 +36,7 @@ import {
   CompareArrows
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 // Import graph images
 import LEFT from "../graphs/LEFT.png";
 import MIDDLE from "../graphs/MIDDLE.png";
@@ -45,7 +45,7 @@ import COMBINED from "../graphs/COMBINED.png";
 
 const graphImages = [
   { 
-    src: LEFT, 
+    src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-a.png", 
     name: "LEFT.png", 
     desc: "Left trajectory over time",
     category: "Left Analysis",
@@ -53,7 +53,7 @@ const graphImages = [
     lastUpdated: "May 14, 2025"
   },
   { 
-    src: MIDDLE, 
+    src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b.png", 
     name: "MIDDLE.png", 
     desc: "Velocity & acceleration metrics", 
     category: "Middle Analysis",
@@ -61,21 +61,21 @@ const graphImages = [
     lastUpdated: "May 14, 2025"
   },
   { 
-    src: RIGHT, 
+    src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-c.png", 
     name: "RIGHT.png", 
     desc: "Comparative right-side patterns", 
     category: "Right Analysis",
     icon: <CompareArrows />,
     lastUpdated: "May 13, 2025"
   },
-  { 
-    src: COMBINED, 
-    name: "COMBINED.png", 
-    desc: "All patterns integrated", 
-    category: "Integrated View",
-    icon: <BarChart />,
-    lastUpdated: "May 12, 2025"
-  },
+  // { 
+  //   src: "http://127.0.0.1:8000/output/combined.png", 
+  //   name: "COMBINED.png", 
+  //   desc: "All patterns integrated", 
+  //   category: "Integrated View",
+  //   icon: <BarChart />,
+  //   lastUpdated: "May 12, 2025"
+  // },
 ];
 
 export default function GraphDashboard() {
@@ -85,33 +85,58 @@ export default function GraphDashboard() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [hoveredGraph, setHoveredGraph] = useState(null);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
 
   // Simulate progress for video generation
-  useEffect(() => {
-    if (isGenerating) {
-      const timer = setInterval(() => {
-        setGenerationProgress((prevProgress) => {
-          const newProgress = prevProgress + 15;
-          if (newProgress >= 100) {
-            clearInterval(timer);
-            setTimeout(() => {
-              console.log("Video generated successfully!");
-              navigate("/final-video");
-            }, 500);
-            return 100;
-          }
-          return newProgress;
-        });
-      }, 500);
+  // useEffect(() => {
+  //   if (isGenerating) {
+  //     const timer = setInterval(() => {
+  //       setGenerationProgress((prevProgress) => {
+  //         const newProgress = prevProgress + 15;
+  //         if (newProgress >= 100) {
+  //           clearInterval(timer);
+  //           setTimeout(() => {
+  //             console.log("Video generated successfully!");
+  //             navigate("/final-video");
+  //           }, 500);
+  //           return 100;
+  //         }
+  //         return newProgress;
+  //       });
+  //     }, 500);
 
-      return () => {
-        clearInterval(timer);
-      };
+  //     return () => {
+  //       clearInterval(timer);
+  //     };
+  //   }
+  // }, [isGenerating, navigate]);
+
+  const generateVideo = async () => {
+    // setIsGenerating(true);
+    // try {
+    //   const response = await axios.post("http://localhost:8000/animation");
+    //   console.log("animation triggered successfully:", response.data);
+    //   alert("Animation video Completed!");
+    // } catch (error) {
+    //   console.error("Error calling processAndDump:", error);
+    // }
+    setLoading(true);
+    setSuccessMessage('');
+
+    try {
+      const response = await axios.post("http://localhost:8000/animation"); // Update URL as needed
+
+      if (response.data === 'success anime') {
+        setSuccessMessage('Success: anime');
+      }
+    } catch (error) {
+      console.error('Animation error:', error);
+      setSuccessMessage('Failed to create animation');
+    } finally {
+      setLoading(false);
     }
-  }, [isGenerating, navigate]);
-
-  const generateVideo = () => {
-    setIsGenerating(true);
   };
 
   const handleOpen = (graph) => {
@@ -400,79 +425,23 @@ export default function GraphDashboard() {
             </Box>
           </Grid>
           <Grid item xs={12} md={5}>
-            {isGenerating ? (
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  bgcolor: "rgba(255, 255, 255, 0.7)", 
-                  p: 3, 
-                  borderRadius: 2 
-                }}
-              >
-                <Stack spacing={2}>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body1" fontWeight="medium">
-                      Generation Progress
-                    </Typography>
-                    <Typography variant="body1" fontWeight="bold">
-                      {Math.round(generationProgress)}%
-                    </Typography>
-                  </Stack>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={generationProgress} 
-                    sx={{ 
-                      height: 10, 
-                      borderRadius: 5,
-                      backgroundColor: "rgba(0, 0, 0, 0.08)",
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor: "#4f46e5",
-                      }
-                    }}
-                  />
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {generationProgress < 25 && (
-                      <Chip size="small" label="Processing graph data..." />
-                    )}
-                    {generationProgress >= 25 && generationProgress < 50 && (
-                      <Chip size="small" label="Building visual sequences..." />
-                    )}
-                    {generationProgress >= 50 && generationProgress < 75 && (
-                      <Chip size="small" label="Generating insights..." />
-                    )}
-                    {generationProgress >= 75 && generationProgress < 100 && (
-                      <Chip size="small" label="Finalizing video render..." />
-                    )}
-                    {generationProgress >= 100 && (
-                      <Chip 
-                        size="small" 
-                        color="success" 
-                        label="Video generation complete!" 
-                      />
-                    )}
-                  </Box>
-                </Stack>
-              </Paper>
-            ) : (
-              <Box 
-                sx={{ 
-                  display: "flex", 
-                  justifyContent: "center", 
-                  alignItems: "center",
-                  p: 2
-                }}
-              >
-                <img 
-                  src="/api/placeholder/400/200" 
-                  alt="Video preview" 
-                  style={{ 
-                    maxWidth: "100%", 
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                  }} 
-                />
-              </Box>
-            )}
+            
+              <div className="mt-4">
+          {loading ? (
+            <div className="flex items-center space-x-2">
+              <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10"
+                  stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>Generating animation...</span>
+            </div>
+          ) : (
+            successMessage && <div className="text-green-600 font-semibold">{successMessage}</div>
+          )}
+        </div>
+           
           </Grid>
         </Grid>
       </Paper>
