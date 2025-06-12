@@ -95,9 +95,9 @@ sys.path.append(f"{HOME}/yolov7")
 # !mkdir input
 # %cd {HOME}/input
 
-SOURCE_VIDEO_A_PATH = f"{HOME}/pose/input/vid1.mp4"
-SOURCE_VIDEO_B_PATH = f"{HOME}/input/vid1.mp4"
-SOURCE_VIDEO_C_PATH = f"{HOME}/input/vid1.mp4"
+SOURCE_VIDEO_A_PATH = f"{HOME}/pose/input/trimmed0.mp4"
+SOURCE_VIDEO_B_PATH = f"{HOME}/pose/input/trimmed1.mp4"
+SOURCE_VIDEO_C_PATH = f"{HOME}/pose/input/trimmed2.mp4"
 
 from typing import Generator
 import matplotlib.pyplot as plt
@@ -1370,10 +1370,10 @@ def generate_animation() -> None:
     pixel_to_meter_ratio = 0.002  # meters per pixel (this should be calculated or calibrated)
     person_real_height = calculate_real_height(pixel_height, pixel_to_meter_ratio)
     print(f"The person's estimated height is: {person_real_height} meters")
-
-    # generate_frames(0, len(extracted_data_a))
+#jaga
+    generate_frames(0, len(extracted_data_a))
     generate_frames(0, len(extracted_data_b))
-    # generate_frames(0, len(extracted_data_c))
+    generate_frames(0, len(extracted_data_c))
 
     create_video_from_images(f"{HOME}/frames", "output_video.mp4", fps=30)
 
