@@ -165,8 +165,9 @@ export default function FinalVideoPage() {
               <Box sx={{ position: "relative" }}>
                 <video
                   id="final-video"
-                  width="75%"
-                  src="http://127.0.0.1:8000/animation/output_video.mp4"
+                  width="100%"
+                  src="http://127.0.0.1:8000/output/output_video2.mp4"
+                  
                   poster="/path/to/thumbnail.jpg"
                   preload="auto"
                   style={{ display: "block" }}
@@ -274,12 +275,12 @@ export default function FinalVideoPage() {
                 1920 x 1080 (Full HD)
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Duration
               </Typography>
               <Typography variant="body1" fontWeight="medium">
                 2:34 minutes
-              </Typography>
+              </Typography> */}
             </Box>
             
             <Box sx={{ flex: 1 }}>
@@ -290,12 +291,12 @@ export default function FinalVideoPage() {
                 MP4 (H.264)
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 File Size
               </Typography>
               <Typography variant="body1" fontWeight="medium">
                 86.4 MB
-              </Typography>
+              </Typography> */}
             </Box>
           </Box>
         </Box>
@@ -318,21 +319,7 @@ export default function FinalVideoPage() {
           Back to Dashboard
         </Button>
         
-        <Button
-          variant="contained"
-          size="large"
-          component={Link}
-          to="/create-new"
-          sx={{ 
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            background: "linear-gradient(90deg, #3a7bd5, #00d2ff)",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)"
-          }}
-        >
-          Create New Video
-        </Button>
+        
       </Box>
 
       {/* Notification */}

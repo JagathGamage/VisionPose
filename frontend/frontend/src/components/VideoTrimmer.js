@@ -17,12 +17,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 const ffmpeg = new FFmpeg();
 
 export default function VideoTrimmer() {
-  
+  const [processing, setProcessing] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedRequirement } = location.state || { selectedRequirement: "No requirement selected" };
 
-  const videoPaths = ["/videos/synced_1.mp4", "/videos/synced_2.mp4", "/videos/synced_3.mp4"];
+  const videoPaths = ["http://127.0.0.1:8000/synced_videos/synced_1_web.mp4", "http://127.0.0.1:8000/synced_videos/synced_2_web.mp4", "http://127.0.0.1:8000/synced_videos/synced_3_web.mp4"];
   const [trimRanges, setTrimRanges] = useState([[0, 100], [0, 100], [0, 100]]);
   const [frames, setFrames] = useState([[], [], []]);
   const [trimmedVideos, setTrimmedVideos] = useState([null, null, null]);
@@ -127,15 +128,18 @@ export default function VideoTrimmer() {
     const endTime = (trimRanges[index][1] / 100) * duration;
 
     await ffmpeg.exec([
-      "-i", inputName,
-      "-ss", `${startTime}`,
-      "-to", `${endTime}`,
-      "-c", "copy",
-      outputName
-    ]);
+    "-i", inputName,
+    "-ss", `${startTime}`,
+    "-t", `${endTime - startTime}`,
+    "-c:v", "libx264",
+    "-preset", "ultrafast",
+    "-c:a", "aac",
+    outputName
+  ]);
 
     const data = await ffmpeg.readFile(outputName);
-    const trimmedBlob = new Blob([data], { type: "video/mp4" });
+    const trimmedBlob = new Blob([data.buffer], { type: "video/mp4" });
+
     const url = URL.createObjectURL(trimmedBlob);
 
     setTrimmedVideos((prev) => {
@@ -164,20 +168,24 @@ export default function VideoTrimmer() {
   };
 
   const callProcessAndDump = async () => {
+    setProcessing(true);
     try {
       const response = await axios.post("http://localhost:8000/processAndDump");
 
       if (response.data === "success") {
         console.log("processAndDump triggered successfully:", response.data);
         alert("Processing and Dumping Completed!");
-        navigate("/videoDisplay"); // navigate to the graphts page
+        navigate("/videoDisplay"); // navigate to the graphs page
       } else {
         console.warn("Unexpected response:", response.data);
       }
     } catch (error) {
       console.error("Error calling processAndDump:", error);
+    } finally {
+      setProcessing(false);
     }
   };
+
 
 
   if (loadingFFmpeg) {
@@ -205,6 +213,7 @@ export default function VideoTrimmer() {
             <Paper elevation={3} sx={{ p: 3, textAlign: "center" }}>
               <Typography variant="h6">Video {index + 1}</Typography>
               <video
+                crossOrigin="anonymous"
                 ref={videoRefs[index]}
                 controls
                 src={src}
@@ -299,11 +308,18 @@ export default function VideoTrimmer() {
 
       {allUploaded && (
         <Box textAlign="center" mt={4}>
-          <Button variant="contained" color="success" onClick={callProcessAndDump}>
-            Process & Dump
+          <Button
+            variant="contained"
+            color="success"
+            onClick={callProcessAndDump}
+            disabled={processing}
+            startIcon={processing && <CircularProgress size={20} color="inherit" />}
+          >
+            {processing ? "Processing..." : "Process & Dump"}
           </Button>
         </Box>
       )}
+
     </Box>
   );
 }

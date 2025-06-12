@@ -47,26 +47,26 @@ const graphImages = [
   { 
     src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-a.png", 
     name: "LEFT.png", 
-    desc: "Left trajectory over time",
+    // desc: "Left trajectory over time",
     category: "Left Analysis",
     icon: <Timeline />,
-    lastUpdated: "May 14, 2025"
+    // lastUpdated: "May 14, 2025"
   },
   { 
     src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b.png", 
     name: "MIDDLE.png", 
-    desc: "Velocity & acceleration metrics", 
+    // desc: "Velocity & acceleration metrics", 
     category: "Middle Analysis",
     icon: <Speed />,
-    lastUpdated: "May 14, 2025"
+    // lastUpdated: "May 14, 2025"
   },
   { 
     src: "http://127.0.0.1:8000/output/right-shoulder-angles-sample-c.png", 
     name: "RIGHT.png", 
-    desc: "Comparative right-side patterns", 
+    // desc: "Comparative right-side patterns", 
     category: "Right Analysis",
     icon: <CompareArrows />,
-    lastUpdated: "May 13, 2025"
+    // lastUpdated: "May 13, 2025"
   },
   // { 
   //   src: "http://127.0.0.1:8000/output/combined.png", 
@@ -126,10 +126,11 @@ export default function GraphDashboard() {
     setSuccessMessage('');
 
     try {
-      const response = await axios.post("http://localhost:8000/animation"); // Update URL as needed
+      const response = await axios.post("http://localhost:8000/anime"); // Update URL as needed
 
       if (response.data === 'success anime') {
         setSuccessMessage('Success: anime');
+        navigate("/final-video")
       }
     } catch (error) {
       console.error('Animation error:', error);
@@ -204,12 +205,12 @@ export default function GraphDashboard() {
               Motion Analysis Dashboard
             </Typography>
             <Typography variant="h6" color="white" align="center" sx={{ maxWidth: "700px", opacity: 0.9 }}>
-              Comprehensive visualization of motion patterns and trajectories
+             
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
               <Chip 
                 icon={<DateRange sx={{ color: "#fff !important" }} />} 
-                label="Last updated: May 14, 2025" 
+                // label="Last updated: May 14, 2025" 
                 sx={{ 
                   bgcolor: "rgba(255,255,255,0.2)", 
                   color: "white",
@@ -218,7 +219,7 @@ export default function GraphDashboard() {
               />
               <Chip 
                 icon={<Info sx={{ color: "#fff !important" }} />} 
-                label="4 Visualizations Available" 
+                label="3 Visualizations Available" 
                 sx={{ 
                   bgcolor: "rgba(255,255,255,0.2)", 
                   color: "white",
@@ -236,8 +237,7 @@ export default function GraphDashboard() {
           Motion Analysis Visualizations
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 800, mx: "auto" }}>
-          These visualizations provide detailed insights into movement patterns, velocity metrics, and 
-          trajectory analysis. Select any visualization to examine in detail.
+          These visualizations provide detailed insights into movement patterns. Select any visualization to examine in detail.
         </Typography>
       </Box>
 
@@ -429,12 +429,12 @@ export default function GraphDashboard() {
               <div className="mt-4">
           {loading ? (
             <div className="flex items-center space-x-2">
-              <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
+              {/* <svg className="animate-spin h-1 w-1 text-blue-500" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10"
                   stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              </svg> */}
               <span>Generating animation...</span>
             </div>
           ) : (

@@ -1,6 +1,14 @@
-// VideoUpload.jsx
 import { useState } from "react";
-import { Box, Button, Card, CardContent, CardHeader, Typography, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  TextField,
+  CircularProgress,
+} from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +17,7 @@ export default function VideoUpload() {
   const navigate = useNavigate();
   const [videos, setVideos] = useState([]);
   const [projectName, setProjectName] = useState("");
+  const [loading, setLoading] = useState(false);  // <-- added loading state
 
   const onDrop = (acceptedFiles) => {
     if (acceptedFiles.length === 3) {
@@ -29,37 +38,44 @@ export default function VideoUpload() {
       alert("Enter a project name and select exactly 3 videos.");
       return;
     }
-  
+
+    setLoading(true);  // <-- start loading spinner
+
     const formData = new FormData();
     formData.append("project_name", projectName);
     videos.forEach((file) => formData.append("files", file));
-  
+
     try {
-      // const response = await fetch("http://127.0.0.1:8000/upload/", {
-      //   method: "POST",
-      //   body: formData,
-      // });
-  
-      if (true) {
-        // const data = await response.json();
+      const response = await fetch("http://127.0.0.1:8000/upload/", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Assume upload success if response.ok
+      if (response.ok) {
         console.log("Uploaded successfully:");
-  
-        // Navigate to sync page with project and videos
         navigate("/sync", {
           state: { projectName, videos },
         });
       } else {
-        
+        alert("Upload failed.");
       }
     } catch (err) {
       console.error("Error uploading videos:", err);
       alert("Error uploading videos.");
+    } finally {
+      setLoading(false);  // <-- stop loading spinner
     }
   };
-  
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="#f4f6f8">
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh"
+      bgcolor="#f4f6f8"
+    >
       <Card sx={{ width: 450, p: 3, boxShadow: 3 }}>
         <CardHeader title="Upload & Sync Videos 🎥" sx={{ textAlign: "center" }} />
         <CardContent>
@@ -70,6 +86,7 @@ export default function VideoUpload() {
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             sx={{ mb: 2 }}
+            disabled={loading} // disable input while loading
           />
           <Box
             {...getRootProps()}
@@ -78,12 +95,12 @@ export default function VideoUpload() {
               borderRadius: 2,
               p: 4,
               textAlign: "center",
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer", // show not-allowed cursor if loading
               bgcolor: "#fafafa",
-              "&:hover": { bgcolor: "#f0f0f0" },
+              "&:hover": { bgcolor: loading ? "#fafafa" : "#f0f0f0" },
             }}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} disabled={loading} />
             <CloudUploadIcon fontSize="large" color="action" />
             <Typography variant="body2" color="textSecondary">
               Drag & drop 3 video files here or click to select
@@ -105,11 +122,12 @@ export default function VideoUpload() {
             fullWidth
             variant="contained"
             color="primary"
-            startIcon={<CloudUploadIcon />}
+            startIcon={loading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
             sx={{ mt: 3 }}
             onClick={handleProceed}
+            disabled={loading} // disable button while loading
           >
-            Proceed to Sync
+            {loading ? "Uploading..." : "Proceed to Sync"}
           </Button>
         </CardContent>
       </Card>

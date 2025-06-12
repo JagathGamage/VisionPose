@@ -16,17 +16,17 @@ export default function Sync() {
   const location = useLocation();
   const { videos = [], projectName } = location.state || {};
 
+  const videoPaths = ["http://127.0.0.1:8000/uploaded_videos/video_1_formatted.mp4", "http://127.0.0.1:8000/uploaded_videos/video_2_formatted.mp4", "http://127.0.0.1:8000/uploaded_videos/video_3_formatted.mp4"];
   const videoRefs = [useRef(), useRef(), useRef()];
   const [frames, setFrames] = useState([[], [], []]);
   const [selectedFrames, setSelectedFrames] = useState([null, null, null]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (videos.length === 3) {
+    if (videoPaths.length === 3) {
       let processed = 0;
-
-      videos.forEach((file, idx) =>
-        extractFrames(file, idx, () => {
+      videoPaths.forEach((url, idx) =>
+        extractFramesFromURL(url, idx, () => {
           processed += 1;
           if (processed === 3) {
             setLoading(false);
@@ -34,7 +34,14 @@ export default function Sync() {
         })
       );
     }
-  }, [videos]);
+  }, []);
+
+  const extractFramesFromURL = async (videoUrl, index, onComplete) => {
+  const response = await fetch(videoUrl);
+  const blob = await response.blob();
+  extractFrames(blob, index, onComplete); // reuse existing method
+  };
+
 
   const extractFrames = (file, index, onComplete) => {
     const video = document.createElement("video");
@@ -44,7 +51,7 @@ export default function Sync() {
 
     video.addEventListener("loadedmetadata", () => {
       const duration = video.duration;
-      const frameRate = 25;
+      const frameRate = 10;
       const interval = 1 / frameRate;
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -127,11 +134,11 @@ export default function Sync() {
       ) : (
         <>
           <Grid container spacing={4}>
-            {videos.map((file, index) => (
+            {videoPaths.map((file, index) => (
               <Grid item xs={12} md={4} key={index}>
                 <video
                   ref={videoRefs[index]}
-                  src={URL.createObjectURL(file)}
+                  src={file}
                   controls
                   width="100%"
                 />
@@ -182,14 +189,14 @@ export default function Sync() {
             <Button type="submit" variant="contained">Sync Videos</Button>
            
           </form>
-          <Button
+          {/* <Button
             variant="outlined"
             color="secondary"
             onClick={() => navigate("/requirementSelector")}
             sx={{ mt: 2, ml: 2 }}
           >
             Go to Requirement Selector
-          </Button>
+          </Button> */}
 
         </>
       )}

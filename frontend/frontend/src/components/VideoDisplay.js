@@ -6,9 +6,9 @@ const VideoDisplay = () => {
   const navigate = useNavigate();
 
   const videoUrls = [
-    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b.mp4",
-    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b.mp4",
-    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-c.mp4",
+    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b2.mp4",
+    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-b2.mp4",
+    "http://127.0.0.1:8000/output/right-shoulder-angles-sample-c2.mp4",
   ];
 
   return (
